@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable, ScrollView, StyleSheet } from "react-native";
 
 type SquareValue = "X" | "O" | null;
 
@@ -17,10 +17,15 @@ function Square({
   );
 }
 
-export default function Board() {
-  const [xIsNext, setXIsNext] = useState(true);
-  const [squares, setSquares] = useState<SquareValue[]>(Array(9).fill(null));
-
+function Board({
+  xIsNext,
+  squares,
+  onPlay,
+}: {
+  xIsNext: boolean;
+  squares: SquareValue[];
+  onPlay: (nextSquares: SquareValue[]) => void;
+}) {
   function handleClick(i: number) {
     if (squares[i] || calculateWinner(squares)) {
       return;
@@ -31,8 +36,7 @@ export default function Board() {
     } else {
       nextSquares[i] = "O";
     }
-    setSquares(nextSquares);
-    setXIsNext(!xIsNext);
+    onPlay(nextSquares);
   }
 
   const winner = calculateWinner(squares);
@@ -44,7 +48,7 @@ export default function Board() {
   }
 
   return (
-    <View style={styles.container}>
+    <View>
       <Text style={styles.status}>{status}</Text>
       <View style={styles.boardRow}>
         <Square value={squares[0]} onSquareClick={() => handleClick(0)} />
@@ -61,6 +65,46 @@ export default function Board() {
         <Square value={squares[7]} onSquareClick={() => handleClick(7)} />
         <Square value={squares[8]} onSquareClick={() => handleClick(8)} />
       </View>
+    </View>
+  );
+}
+
+export default function Game() {
+  const [history, setHistory] = useState<SquareValue[][]>([Array(9).fill(null)]);
+  const [currentMove, setCurrentMove] = useState(0);
+  const xIsNext = currentMove % 2 === 0;
+  const currentSquares = history[currentMove];
+
+  function handlePlay(nextSquares: SquareValue[]) {
+    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+    setHistory(nextHistory);
+    setCurrentMove(nextHistory.length - 1);
+  }
+
+  function jumpTo(nextMove: number) {
+    setCurrentMove(nextMove);
+  }
+
+  const moves = history.map((squares, move) => {
+    let description;
+    if (move > 0) {
+      description = "Go to move #" + move;
+    } else {
+      description = "Go to game start";
+    }
+    return (
+      <Pressable key={move} style={styles.moveButton} onPress={() => jumpTo(move)}>
+        <Text style={styles.moveText}>{description}</Text>
+      </Pressable>
+    );
+  });
+
+  return (
+    <View style={styles.game}>
+      <Board xIsNext={xIsNext} squares={currentSquares} onPlay={handlePlay} />
+      <ScrollView style={styles.gameInfo} contentContainerStyle={{ gap: 8 }}>
+        {moves}
+      </ScrollView>
     </View>
   );
 }
@@ -86,13 +130,13 @@ function calculateWinner(squares: SquareValue[]): SquareValue {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  game: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    paddingTop: 80,
     backgroundColor: "#fff",
   },
-  status: { fontSize: 20, marginBottom: 12 },
+  status: { fontSize: 20, marginBottom: 12, textAlign: "center" },
   boardRow: { flexDirection: "row" },
   square: {
     width: 80,
@@ -103,4 +147,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   squareText: { fontSize: 36, fontWeight: "bold" },
+  gameInfo: { marginTop: 24, width: 240 },
+  moveButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+  },
+  moveText: { textAlign: "center" },
 });
