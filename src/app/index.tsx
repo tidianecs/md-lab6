@@ -86,6 +86,14 @@ export default function Game() {
   }
 
   const moves = history.map((squares, move) => {
+    if (move === currentMove) {
+      return (
+        <Text key={move} style={styles.currentMove}>
+          {move > 0 ? "You are at move #" + move : "You are at game start"}
+        </Text>
+      );
+    }
+
     let description;
     if (move > 0) {
       description = "Go to move #" + move;
@@ -156,4 +164,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   moveText: { textAlign: "center" },
+  currentMove: {
+    textAlign: "center",
+    paddingVertical: 8,
+    fontWeight: "bold",
+  },
 });
